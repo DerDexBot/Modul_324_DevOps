@@ -12,5 +12,4 @@ class DemoApplicationTests {
 	void contextLoads() {
 		assertTrue(true, "alles gut");
 	}
-
 }
