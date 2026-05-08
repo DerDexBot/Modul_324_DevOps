@@ -13,22 +13,33 @@ function App() {
   */
   const handleSubmit = event => {
     event.preventDefault();
-    console.log("Sending task description to Spring-Server: "+taskdescription);
-    fetch("http://localhost:8080/tasks", {  // API endpoint (the complete URL!) to save a taskdescription
+
+    if (!taskdescription.trim()) {
+      return;
+    }
+
+    console.log("Sending task description to Spring-Server: " + taskdescription);
+
+    fetch("http://localhost:8080/tasks", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ taskdescription: taskdescription }) // both 'taskdescription' are identical to Task-Class attribute in Spring
+      body: JSON.stringify({ taskdescription: taskdescription })
     })
-    .then(response => {
-      console.log("Receiving answer after sending to Spring-Server: ");
-      console.log(response);
-      window.location.href = "/";
-      setTaskdescription("");             // clear input field, preparing it for the next input
-    })
-    .catch(error => console.log(error))
-  }
+        .then(response => {
+          console.log("Receiving answer after sending to Spring-Server: ");
+          console.log(response);
+
+          if (!response.ok) {
+            throw new Error("Speichern fehlgeschlagen");
+          }
+
+          setTaskdescription("");
+          window.location.href = "/";
+        })
+        .catch(error => console.log(error));
+  };
 
    /** Is called when ever the html input field value below changes to update the component's state.
   ** This is, because the submit should not take the field value directly.
@@ -100,9 +111,10 @@ function App() {
         <form onSubmit={handleSubmit} className='todo-form'>
           <label htmlFor="taskdescription">Neues Todo anlegen:</label>
           <input
-            type="text"
-            value={taskdescription}
-            onChange={handleChange}
+              id="taskdescription"
+              type="text"
+              value={taskdescription}
+              onChange={handleChange}
           />
           <button type="submit">Absenden</button>
         </form>
