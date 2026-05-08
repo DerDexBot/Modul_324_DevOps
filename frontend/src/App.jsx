@@ -57,31 +57,30 @@ function App() {
   ** It updates the component's state with the fetched todos from the API Endpoint '/'.
   */
   useEffect(() => {
-    fetch("http://localhost:8080/").then(response => response.json()).then(data => {
-      setTodos(data);
-    });
+      fetch("http://localhost:8080/tasks")
+          .then(response => response.json())
+          .then(data => {
+              setTodos(data);
+          })
+          .catch(error => console.log(error));
   }, []);
 
 
  /** Is called when the Done-Button is pressed. It sends a POST request to the API endpoint '/delete' and updates the component's state with the new todo.
   ** In this case if the task with the unique taskdescription is found on the server, it will be removed from the list.
   */
-  const handleDelete = (event, taskdescription) => {
-    console.log("Sending task description to delete on Spring-Server: "+taskdescription);
-    fetch(`http://localhost:8080/delete`, { // API endpoint (the complete URL!) to delete an existing taskdescription in the list
-      method: "POST",
-      body: JSON.stringify({ taskdescription: taskdescription }),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-    .then(response => {
-      console.log("Receiving answer after deleting on Spring-Server: ");
-      console.log(response);
-      window.location.href = "/";
-    })
-    .catch(error => console.log(error))
-  }
+ const handleDelete = (id) => {
+     fetch(`http://localhost:8080/tasks/${id}`, {
+         method: "DELETE"
+     })
+         .then(response => {
+             if (!response.ok) {
+                 throw new Error("Löschen fehlgeschlagen");
+             }
+             window.location.href = "/";
+         })
+         .catch(error => console.log(error));
+ };
 
   /**
    * render all task lines
@@ -92,10 +91,10 @@ function App() {
     return (
       <ul className="todo-list">
         {todos.map((todo, index) => (
-          <li key={todo.taskdescription}>
-            <span>{"Task " + (index+1) + ": "+ todo.taskdescription}</span>
-            <button onClick={(event) => handleDelete(event, todo.taskdescription) }>&#10004;</button>
-          </li>
+            <li key={todo.id}>
+                <span>{"Task " + (index + 1) + ": " + todo.taskdescription}</span>
+                <button onClick={() => handleDelete(todo.id)}>&#10004;</button>
+            </li>
         ))}
       </ul>
     );
