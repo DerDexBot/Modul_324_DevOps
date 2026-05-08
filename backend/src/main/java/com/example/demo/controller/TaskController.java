@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/tasks")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 public class TaskController {
 
     private final TaskService taskService;
@@ -29,6 +29,11 @@ public class TaskController {
     @ResponseStatus(HttpStatus.CREATED)
     public Task createTask(@Valid @RequestBody TaskRequest request) {
         return taskService.create(request);
+    }
+
+    @PutMapping("/{id}")
+    public Task updateTask(@PathVariable Long id, @Valid @RequestBody TaskRequest request) {
+        return taskService.update(id, request);
     }
 
     @DeleteMapping("/{id}")

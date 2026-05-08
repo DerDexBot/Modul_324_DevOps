@@ -29,6 +29,14 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    public Task update(Long id, TaskRequest request) {
+        Task existingTask = taskRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Task wurde nicht gefunden."));
+
+        existingTask.setTaskdescription(request.getTaskdescription().trim());
+        return taskRepository.save(existingTask);
+    }
+
     public void deleteById(Long id) {
         if (!taskRepository.existsById(id)) {
             throw new ResponseStatusException(NOT_FOUND, "Task wurde nicht gefunden.");
