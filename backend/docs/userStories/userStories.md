@@ -114,9 +114,7 @@
 
 ---
 
-# Sinnvolle Erweiterungen für weitere User Stories
-
-Falls nicht nur der Ist-Zustand beschrieben werden soll, sondern auch mögliche Verbesserungen und zusätzliche Anforderungen, dann sind die folgenden Stories passend:
+# Erweiterungen für weitere User Stories
 
 ## 6. User Story: Leere Eingaben verhindern
 
