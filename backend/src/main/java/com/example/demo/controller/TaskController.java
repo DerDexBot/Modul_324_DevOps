@@ -36,6 +36,11 @@ public class TaskController {
         return taskService.update(id, request);
     }
 
+    @PutMapping("/{id}/done")
+    public Task markTaskDone(@PathVariable Long id) {
+        return taskService.markDone(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(@PathVariable Long id) {

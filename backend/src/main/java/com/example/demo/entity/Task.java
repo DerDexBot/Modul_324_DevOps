@@ -13,6 +13,9 @@ public class Task {
     @Column(nullable = false)
     private String taskdescription;
 
+    @Column(nullable = false)
+    private boolean done = false;
+
     public Task() {
     }
 
@@ -30,5 +33,13 @@ public class Task {
 
     public void setTaskdescription(String taskdescription) {
         this.taskdescription = taskdescription;
+    }
+
+    public boolean isDone() {
+        return done;
+    }
+
+    public void setDone(boolean done) {
+        this.done = done;
     }
 }
