@@ -87,6 +87,27 @@ function App() {
             })
     }
 
+    const handleDone = id => {
+        setErrorMessage('')
+
+        fetch(`${API_URL}/tasks/${id}/done`, {
+            method: 'PUT'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erledigen fehlgeschlagen')
+                }
+                return response.json()
+            })
+            .then(() => {
+                loadTasks()
+            })
+            .catch(error => {
+                console.log(error)
+                setErrorMessage('Die Aufgabe konnte nicht als erledigt markiert werden.')
+            })
+    }
+
     const startEdit = todo => {
         setEditingId(todo.id)
         setEditText(todo.taskdescription)
@@ -144,7 +165,10 @@ function App() {
                                     onChange={event => setEditText(event.target.value)}
                                 />
                             ) : (
-                                <span>{`Task ${index + 1}: ${todo.taskdescription}`}</span>
+                                <span style={todo.done ? { textDecoration: 'line-through', color: '#999' } : {}}>
+                                    {`Task ${index + 1}: ${todo.taskdescription}`}
+                                    {todo.done && ' ✓'}
+                                </span>
                             )}
                         </div>
 
@@ -160,11 +184,11 @@ function App() {
                                 </>
                             ) : (
                                 <>
-                                    <button className="edit-btn" onClick={() => startEdit(todo)}>
+                                    <button className="edit-btn" onClick={() => startEdit(todo)} disabled={todo.done}>
                                         Bearbeiten
                                     </button>
-                                    <button className="delete-btn" onClick={() => handleDelete(todo.id)}>
-                                        Erledigt
+                                    <button className="delete-btn" onClick={() => handleDone(todo.id)} disabled={todo.done}>
+                                        {todo.done ? 'Erledigt ✓' : 'Als erledigt markieren'}
                                     </button>
                                 </>
                             )}
