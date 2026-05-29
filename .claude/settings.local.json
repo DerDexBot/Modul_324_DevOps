@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(cd \"C:\\\\Program Files\\\\JetBrains\\\\Intelij\\\\Modul_324_DevOps\\\\backend\\\\src\" ; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -match '\\\\.\\(java|properties|yml|yaml\\)$' } | ForEach-Object { $_.FullName } | Sort-Object)",
+      "Bash(mvn test *)"
+    ]
+  }
+}
