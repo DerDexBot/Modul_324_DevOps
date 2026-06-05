@@ -187,8 +187,11 @@ function App() {
                                     <button className="edit-btn" onClick={() => startEdit(todo)} disabled={todo.done}>
                                         Bearbeiten
                                     </button>
-                                    <button className="delete-btn" onClick={() => handleDone(todo.id)} disabled={todo.done}>
+                                    <button className="done-btn" onClick={() => handleDone(todo.id)} disabled={todo.done}>
                                         {todo.done ? 'Erledigt ✓' : 'Als erledigt markieren'}
+                                    </button>
+                                    <button className="delete-btn" onClick={() => handleDelete(todo.id)}>
+                                        Löschen
                                     </button>
                                 </>
                             )}

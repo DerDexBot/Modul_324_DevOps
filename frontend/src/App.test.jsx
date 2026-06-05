@@ -1,0 +1,82 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import App from './App'
+
+const API_URL = 'http://localhost:8080'
+
+function mockJsonResponse(data, ok = true) {
+    return Promise.resolve({
+        ok,
+        json: () => Promise.resolve(data)
+    })
+}
+
+describe('App', () => {
+    beforeEach(() => {
+        globalThis.fetch = jest.fn()
+        jest.spyOn(console, 'log').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+        jest.restoreAllMocks()
+    })
+
+    test('lädt Aufgaben vom Backend und zeigt sie in der Liste an', async () => {
+        globalThis.fetch.mockResolvedValueOnce(
+            await mockJsonResponse([
+                { id: 1, taskdescription: 'Jest Tests schreiben', done: false },
+                { id: 2, taskdescription: 'Dokumentation ergänzen', done: true }
+            ])
+        )
+
+        render(<App />)
+
+        expect(await screen.findByText('Task 1: Jest Tests schreiben')).toBeInTheDocument()
+        expect(screen.getByText(/Task 2: Dokumentation ergänzen/)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Erledigt ✓' })).toBeDisabled()
+        expect(globalThis.fetch).toHaveBeenCalledWith(`${API_URL}/tasks`)
+    })
+
+    test('legt eine neue Aufgabe per POST an und lädt die Liste danach neu', async () => {
+        globalThis.fetch
+            .mockResolvedValueOnce(await mockJsonResponse([]))
+            .mockResolvedValueOnce(await mockJsonResponse({ id: 3, taskdescription: 'Neue Aufgabe', done: false }))
+            .mockResolvedValueOnce(await mockJsonResponse([{ id: 3, taskdescription: 'Neue Aufgabe', done: false }]))
+
+        const user = userEvent.setup()
+        render(<App />)
+
+        expect(await screen.findByText('Noch keine Aufgaben vorhanden.')).toBeInTheDocument()
+
+        await user.type(screen.getByLabelText('Neue Aufgabe anlegen:'), 'Neue Aufgabe')
+        await user.click(screen.getByRole('button', { name: 'Absenden' }))
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenNthCalledWith(
+                2,
+                `${API_URL}/tasks`,
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskdescription: 'Neue Aufgabe' })
+                })
+            )
+        })
+
+        expect(await screen.findByText('Task 1: Neue Aufgabe')).toBeInTheDocument()
+        expect(screen.getByLabelText('Neue Aufgabe anlegen:')).toHaveValue('')
+    })
+
+    test('zeigt eine Fehlermeldung, wenn eine leere Aufgabe abgesendet wird', async () => {
+        globalThis.fetch.mockResolvedValueOnce(await mockJsonResponse([]))
+
+        const user = userEvent.setup()
+        render(<App />)
+
+        await screen.findByText('Noch keine Aufgaben vorhanden.')
+        await user.click(screen.getByRole('button', { name: 'Absenden' }))
+
+        expect(screen.getByText('Bitte eine Aufgabe eingeben.')).toBeInTheDocument()
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+    })
+})
