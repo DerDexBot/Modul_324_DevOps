@@ -155,7 +155,7 @@ function App() {
         return (
             <ul className="todo-list">
                 {todos.map((todo, index) => (
-                    <li key={todo.id} className="todo-item">
+                    <li key={todo.id} className={`todo-item${todo.done ? ' done' : ''}`}>
                         <div className="todo-content">
                             {editingId === todo.id ? (
                                 <input
