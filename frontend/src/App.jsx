@@ -152,6 +152,10 @@ function App() {
             })
     }
 
+    const doneCount = todos.filter(t => t.done).length
+    const totalCount = todos.length
+    const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
+
     const filteredTodos = todos.filter(todo => {
         if (filter === 'open') return !todo.done
         if (filter === 'done') return todo.done
@@ -216,6 +220,19 @@ function App() {
 
                 <div className="todo-card">
                     <h1>ToDo Liste</h1>
+
+                    {totalCount > 0 && (
+                        <div className="progress-section">
+                            <div className="progress-label">
+                                {doneCount === totalCount
+                                    ? '🎉 Alle Aufgaben erledigt!'
+                                    : `${doneCount} von ${totalCount} Aufgaben erledigt`}
+                            </div>
+                            <div className="progress-bar-bg">
+                                <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
+                            </div>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="todo-form">
                         <label htmlFor="taskdescription">Neue Aufgabe anlegen:</label>

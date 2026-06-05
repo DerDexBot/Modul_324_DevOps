@@ -217,3 +217,30 @@ h1 {
   color: #fff;
   font-weight: 600;
 }
+
+/* ─── Progress Bar (US-21) ──────────────────────────────────────────────────── */
+
+.progress-section {
+  margin-bottom: 24px;
+}
+
+.progress-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.progress-bar-bg {
+  height: 8px;
+  background: #e0e7ff;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #818cf8);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}

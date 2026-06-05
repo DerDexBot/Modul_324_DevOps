@@ -115,6 +115,43 @@ describe('App', () => {
         expect(screen.queryByText(/Erledigte Aufgabe/)).not.toBeInTheDocument()
     })
 
+    // ─── US-21: Fortschrittsanzeige ───────────────────────────────────────────
+
+    test('US-21: zeigt Fortschrittstext mit korrekter Anzahl', async () => {
+        globalThis.fetch.mockResolvedValueOnce(
+            await mockJsonResponse([
+                { id: 1, taskdescription: 'Aufgabe 1', done: true },
+                { id: 2, taskdescription: 'Aufgabe 2', done: false }
+            ])
+        )
+
+        render(<App />)
+
+        expect(await screen.findByText('1 von 2 Aufgaben erledigt')).toBeInTheDocument()
+    })
+
+    test('US-21: zeigt Glückwunsch-Meldung wenn alle Aufgaben erledigt sind', async () => {
+        globalThis.fetch.mockResolvedValueOnce(
+            await mockJsonResponse([
+                { id: 1, taskdescription: 'Aufgabe 1', done: true },
+                { id: 2, taskdescription: 'Aufgabe 2', done: true }
+            ])
+        )
+
+        render(<App />)
+
+        expect(await screen.findByText('🎉 Alle Aufgaben erledigt!')).toBeInTheDocument()
+    })
+
+    test('US-21: zeigt keinen Fortschrittsbalken wenn keine Tasks vorhanden', async () => {
+        globalThis.fetch.mockResolvedValueOnce(await mockJsonResponse([]))
+
+        render(<App />)
+
+        await screen.findByText('Noch keine Aufgaben vorhanden.')
+        expect(screen.queryByText(/von \d+ Aufgaben erledigt/)).not.toBeInTheDocument()
+    })
+
     test('US-20: filtert nur erledigte Aufgaben wenn Erledigt-Filter aktiv', async () => {
         globalThis.fetch.mockResolvedValueOnce(
             await mockJsonResponse([
