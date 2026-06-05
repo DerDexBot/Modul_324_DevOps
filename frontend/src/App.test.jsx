@@ -79,4 +79,57 @@ describe('App', () => {
         expect(screen.getByText('Bitte eine Aufgabe eingeben.')).toBeInTheDocument()
         expect(globalThis.fetch).toHaveBeenCalledTimes(1)
     })
+
+    // ─── US-20: Filter-Tests ──────────────────────────────────────────────────
+
+    test('US-20: zeigt Filter-Buttons wenn Tasks vorhanden sind', async () => {
+        globalThis.fetch.mockResolvedValueOnce(
+            await mockJsonResponse([
+                { id: 1, taskdescription: 'Offene Aufgabe', done: false },
+                { id: 2, taskdescription: 'Erledigte Aufgabe', done: true }
+            ])
+        )
+
+        render(<App />)
+
+        expect(await screen.findByRole('button', { name: /Alle/ })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /Offen/ })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /Erledigt \(/ })).toBeInTheDocument()
+    })
+
+    test('US-20: filtert nur offene Aufgaben wenn Offen-Filter aktiv', async () => {
+        globalThis.fetch.mockResolvedValueOnce(
+            await mockJsonResponse([
+                { id: 1, taskdescription: 'Offene Aufgabe', done: false },
+                { id: 2, taskdescription: 'Erledigte Aufgabe', done: true }
+            ])
+        )
+
+        const user = userEvent.setup()
+        render(<App />)
+
+        await screen.findByText('Task 1: Offene Aufgabe')
+        await user.click(screen.getByRole('button', { name: /Offen/ }))
+
+        expect(screen.getByText('Task 1: Offene Aufgabe')).toBeInTheDocument()
+        expect(screen.queryByText(/Erledigte Aufgabe/)).not.toBeInTheDocument()
+    })
+
+    test('US-20: filtert nur erledigte Aufgaben wenn Erledigt-Filter aktiv', async () => {
+        globalThis.fetch.mockResolvedValueOnce(
+            await mockJsonResponse([
+                { id: 1, taskdescription: 'Offene Aufgabe', done: false },
+                { id: 2, taskdescription: 'Erledigte Aufgabe', done: true }
+            ])
+        )
+
+        const user = userEvent.setup()
+        render(<App />)
+
+        await screen.findByText('Task 1: Offene Aufgabe')
+        await user.click(screen.getByRole('button', { name: /Erledigt \(/ }))
+
+        expect(screen.getByText(/Erledigte Aufgabe/)).toBeInTheDocument()
+        expect(screen.queryByText(/Offene Aufgabe/)).not.toBeInTheDocument()
+    })
 })

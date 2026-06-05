@@ -10,6 +10,7 @@ function App() {
     const [errorMessage, setErrorMessage] = useState('')
     const [editingId, setEditingId] = useState(null)
     const [editText, setEditText] = useState('')
+    const [filter, setFilter] = useState('all')
 
     const loadTasks = () => {
         fetch(`${API_URL}/tasks`)
@@ -151,6 +152,12 @@ function App() {
             })
     }
 
+    const filteredTodos = todos.filter(todo => {
+        if (filter === 'open') return !todo.done
+        if (filter === 'done') return todo.done
+        return true
+    })
+
     const renderTasks = todos => {
         return (
             <ul className="todo-list">
@@ -165,7 +172,7 @@ function App() {
                                     onChange={event => setEditText(event.target.value)}
                                 />
                             ) : (
-                                <span style={todo.done ? { textDecoration: 'line-through', color: '#999' } : {}}>
+                                <span style={todo.done ? { textDecoration: 'line-through', color: '#6b7280' } : {}}>
                                     {`Task ${index + 1}: ${todo.taskdescription}`}
                                     {todo.done && ' ✓'}
                                 </span>
@@ -226,10 +233,35 @@ function App() {
 
                     {errorMessage && <p className="error-message">{errorMessage}</p>}
 
+                    {todos.length > 0 && (
+                        <div className="filter-bar">
+                            <button
+                                className={`filter-btn${filter === 'all' ? ' active' : ''}`}
+                                onClick={() => setFilter('all')}
+                            >
+                                Alle ({todos.length})
+                            </button>
+                            <button
+                                className={`filter-btn${filter === 'open' ? ' active' : ''}`}
+                                onClick={() => setFilter('open')}
+                            >
+                                Offen ({todos.filter(t => !t.done).length})
+                            </button>
+                            <button
+                                className={`filter-btn${filter === 'done' ? ' active' : ''}`}
+                                onClick={() => setFilter('done')}
+                            >
+                                Erledigt ({todos.filter(t => t.done).length})
+                            </button>
+                        </div>
+                    )}
+
                     {todos.length === 0 ? (
                         <p className="empty-message">Noch keine Aufgaben vorhanden.</p>
+                    ) : filteredTodos.length === 0 ? (
+                        <p className="empty-message">Keine Aufgaben in dieser Kategorie.</p>
                     ) : (
-                        renderTasks(todos)
+                        renderTasks(filteredTodos)
                     )}
                 </div>
             </header>
