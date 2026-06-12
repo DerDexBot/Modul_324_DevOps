@@ -1,0 +1,22 @@
+name: github-runner
+
+services:
+  runner:
+    image: myoung34/github-runner:latest
+    restart: unless-stopped
+    environment:
+      REPO_URL: ${REPO_URL}
+      RUNNER_NAME: ${RUNNER_NAME:-local-docker-runner}
+      ACCESS_TOKEN: ${ACCESS_TOKEN}
+      RUNNER_WORKDIR: /tmp/github-runner-work
+      LABELS: ${RUNNER_LABELS:-self-hosted,linux,x64}
+      RUNNER_SCOPE: repo
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner_work:/tmp/github-runner-work
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  runner_work:
+    driver: local
