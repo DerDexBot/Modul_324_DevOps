@@ -48,34 +48,41 @@ Jeder Push und Pull Request auf `main` löst automatisch die Pipelines aus.
 
 ```mermaid
 flowchart TD
-    DEV([Developer\ngit push]) --> MAIN[main Branch\nauf GitHub]
-
+    DEV([Developer\ngit push / PR]) --> MAIN[main Branch\nauf GitHub]
     MAIN --> CIB & CIF
 
-    subgraph CIB_block["CI Backend  ·  ci.yml"]
-        CIB["JDK 21 einrichten\n↓\nmvn verify\n31 Tests\n↓\nCodeQL Analyse"]
+    subgraph RUNNER["Self-Hosted Runner  ·  Docker  ·  runner/docker-compose.yml"]
+
+        subgraph CIB_block["CI Backend  ·  ci.yml"]
+            CIB["JDK 21\nmvn verify – 31 Tests\nCodeQL Analyse"]
+        end
+
+        subgraph CIF_block["CI Frontend  ·  ci-frontend.yml"]
+            CIF["Node.js 24\nnpm ci · Jest – 9 Tests\nESLint · Vite Build"]
+        end
+
+        subgraph CD_block["CD  ·  cd.yml  ·  nur wenn CI Backend OK"]
+            CD["JAR bauen\nDocker Image bauen\nPush zu ghcr.io"]
+        end
+
     end
 
-    subgraph CIF_block["CI Frontend  ·  ci-frontend.yml"]
-        CIF["Node.js 24 einrichten\n↓\nnpm ci\n↓\nJest – 9 Tests\n↓\nESLint\n↓\nVite Build → dist/"]
-    end
-
-    CIB --> GATE{CI Backend\nerfolgreich?}
-    GATE -- Nein --> STOP([Kein Image\ngebaut])
+    CIB --> GATE{OK?}
+    GATE -- Nein --> STOP([Stop\nkein Artefakt])
     GATE -- Ja --> CD
 
-    subgraph CD_block["CD  ·  cd.yml"]
-        CD["JAR bauen\nmvn package -DskipTests\n↓\nDocker Image bauen\n↓\nPush zu ghcr.io"]
-    end
+    CIF --> FE_OK{OK?}
+    FE_OK -- Nein --> STOP2([Stop])
+    FE_OK -- Ja --> FE_ART
 
-    CD --> TAG1([todo-backend:latest])
-    CD --> TAG2([todo-backend:sha-&lt;commit&gt;])
-    CD --> JAR([todo-backend-&lt;run&gt;.jar\nArtifact · 30 Tage])
+    CD --> BE_JAR([todo-backend-&lt;n&gt;.jar\nArtifact · 30 Tage])
+    CD --> IMG1([ghcr.io:latest])
+    CD --> IMG2([ghcr.io:sha-&lt;commit&gt;])
 
-    CIF --> FSTATUS([todo-frontend-&lt;run&gt;.zip\nArtifact · 30 Tage])
+    FE_ART([todo-frontend-&lt;n&gt;.zip\nArtifact · 30 Tage])
 ```
 
-> **Alle drei Pipelines laufen auf dem lokalen Self-Hosted Runner** (Docker-Container auf dem eigenen Rechner).
+> **Alle Pipelines laufen auf dem lokalen Self-Hosted Runner** – kein GitHub-Minutenkontingent verbraucht.
 
 ---
 
