@@ -107,6 +107,7 @@ Nur wenn CI mit `success` abgeschlossen hat, wird der Job ausgeführt. Bei fehlg
 | `actions/checkout@v4` | Code auschecken |
 | `actions/setup-java@v4` | JDK 21 einrichten (mit Maven-Cache) |
 | `mvn package -DskipTests` | JAR bauen (Tests wurden bereits in CI ausgeführt) |
+| `actions/upload-artifact@v4` | JAR als Workflow-Artefakt hochladen (30 Tage downloadbar) |
 | `docker/login-action@v3` | Login bei GitHub Container Registry mit `GITHUB_TOKEN` |
 | `docker/metadata-action@v5` | Image-Tags automatisch generieren (`latest` + Commit-SHA) |
 | `docker/build-push-action@v5` | Docker-Image bauen und in ghcr.io pushen |
@@ -123,7 +124,24 @@ permissions:
 
 ---
 
-## 5. Docker-Image Tags
+## 5. Artefakte
+
+### JAR-Artefakt (GitHub Actions)
+
+Nach jedem erfolgreichen CD-Lauf wird das JAR automatisch als Workflow-Artefakt hochgeladen:
+
+```mermaid
+flowchart LR
+    A[mvn package] --> B[todo-backend-42.jar]
+    B --> C["actions/upload-artifact@v4\nName: todo-backend-42\nRetention: 30 Tage"]
+    C --> D["GitHub → Actions\n→ CD-Lauf → Artifacts\n[Download]"]
+```
+
+**Download:** GitHub → Actions → CD-Lauf auswählen → Abschnitt **Artifacts** → `todo-backend-<run_number>.jar`
+
+Die Nummer im Namen entspricht der fortlaufenden Laufnummer des Workflows (`github.run_number`), sodass jeder Build eindeutig identifizierbar bleibt.
+
+### Docker-Image Tags
 
 Pro Deployment werden zwei Tags erstellt:
 

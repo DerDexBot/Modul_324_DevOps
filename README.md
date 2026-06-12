@@ -70,6 +70,7 @@ flowchart TD
 
     CD --> TAG1([todo-backend:latest])
     CD --> TAG2([todo-backend:sha-&lt;commit&gt;])
+    CD --> JAR([todo-backend-&lt;run&gt;.jar\nArtifact · 30 Tage])
 
     CIF --> FSTATUS([Frontend\nTests OK ✓])
 ```
