@@ -57,7 +57,7 @@ flowchart TD
     end
 
     subgraph CIF_block["CI Frontend  ·  ci-frontend.yml"]
-        CIF["Node.js 24 einrichten\n↓\nnpm ci\n↓\nJest – 9 Tests\n↓\nESLint"]
+        CIF["Node.js 24 einrichten\n↓\nnpm ci\n↓\nJest – 9 Tests\n↓\nESLint\n↓\nVite Build → dist/"]
     end
 
     CIB --> GATE{CI Backend\nerfolgreich?}
@@ -72,7 +72,7 @@ flowchart TD
     CD --> TAG2([todo-backend:sha-&lt;commit&gt;])
     CD --> JAR([todo-backend-&lt;run&gt;.jar\nArtifact · 30 Tage])
 
-    CIF --> FSTATUS([Frontend\nTests OK ✓])
+    CIF --> FSTATUS([todo-frontend-&lt;run&gt;.zip\nArtifact · 30 Tage])
 ```
 
 > **Alle drei Pipelines laufen auf dem lokalen Self-Hosted Runner** (Docker-Container auf dem eigenen Rechner).

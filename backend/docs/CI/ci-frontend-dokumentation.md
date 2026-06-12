@@ -20,7 +20,7 @@ flowchart TD
     A([Push auf main]) --> B & C
 
     B["CI Backend\nci.yml\nJDK 21 · mvn verify · CodeQL"]
-    C["CI Frontend\nci-frontend.yml\nNode.js 20 · Jest · ESLint"]
+    C["CI Frontend\nci-frontend.yml\nNode.js 24 · Jest · ESLint · Vite Build\n9 Tests + dist/ Artifact"]
 
     B --> D{CI Backend OK?}
     D -- Nein --> E([Stop · kein Docker-Image])
@@ -98,10 +98,12 @@ Identisch zum Backend-CI: Der Workflow läuft bei jedem Push auf `main` und bei 
 | Schritt | Aktion | Erklärung |
 |---|---|---|
 | `actions/checkout@v4` | Code auschecken | Lädt den aktuellen Stand des Repos |
-| `actions/setup-node@v4` | Node.js 20 einrichten | Installiert Node.js mit npm-Cache |
+| `actions/setup-node@v4` | Node.js 24 einrichten | Installiert Node.js mit npm-Cache |
 | `npm ci` | Abhängigkeiten installieren | Reproduzierbar aus `package-lock.json` |
 | `npm test -- --watchAll=false` | Jest-Tests ausführen | Alle 9 Frontend-Tests |
 | `npm run lint` | ESLint-Analyse | Statische Codeanalyse (entspricht CodeQL beim Backend) |
+| `npm run build` | Produktions-Build | Vite bündelt und optimiert alle Assets nach `dist/` |
+| `actions/upload-artifact@v4` | dist/ als Artefakt hochladen | 30 Tage downloadbar, nur bei bestandenen Tests |
 
 ### Warum `npm ci` statt `npm install`?
 
@@ -111,9 +113,13 @@ Identisch zum Backend-CI: Der Workflow läuft bei jedem Push auf `main` und bei 
 
 Ohne diesen Flag würde Jest im Watch-Modus starten und auf Dateiänderungen warten – eine endlose Blockade in der CI-Umgebung. `--watchAll=false` stellt sicher, dass Jest alle Tests einmalig ausführt und danach beendet.
 
-### Warum Node.js 20?
+### Warum Node.js 24?
 
-Node.js 20 ist die aktuelle LTS-Version (Long Term Support). Sie bietet maximale Stabilität und langfristigen Support – ideal für CI-Umgebungen.
+Node.js 24 ist die aktuelle Version und kompatibel mit allen verwendeten Abhängigkeiten (React 19, Vite 6, Jest 30).
+
+### Warum `npm run build` im CI?
+
+Der Vite-Produktions-Build prüft, ob alle Imports auflösbar sind und die App fehlerfrei kompiliert. Tests können bestehen, während der Build durch fehlende Abhängigkeiten oder Typfehler scheitert – der Build-Schritt schliesst diese Lücke. Das Ergebnis (`dist/`) wird direkt als Artefakt hochgeladen.
 
 ### npm-Cache
 
@@ -131,12 +137,14 @@ GitHub Actions cached automatisch den `node_modules`-Ordner basierend auf dem Ha
 | Aspekt | CI Backend | CI Frontend |
 |---|---|---|
 | **Datei** | `ci.yml` | `ci-frontend.yml` |
-| **Laufzeitumgebung** | JDK 21 (Temurin) | Node.js 20 (LTS) |
+| **Laufzeitumgebung** | JDK 21 (Temurin) | Node.js 24 |
 | **Build-Tool** | Maven (`mvn verify`) | npm (`npm ci`) |
 | **Test-Framework** | JUnit 5 + Mockito | Jest + React Testing Library |
 | **Statische Analyse** | CodeQL | ESLint |
+| **Produktions-Build** | JAR via `mvn package` | `dist/` via `npm run build` |
+| **Artefakt** | `todo-backend-<n>.jar` | `todo-frontend-<n>.zip` |
 | **Testanzahl** | 31 Tests | 9 Tests |
-| **Löst CD aus?** | Ja (bei Erfolg) | Nein (nur Qualitätssicherung) |
+| **Löst CD aus?** | Ja (bei Erfolg) | Nein (eigenständige Pipeline) |
 
 ---
 
