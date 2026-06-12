@@ -215,3 +215,63 @@ Die Labels `self-hosted`, `linux`, `x64` müssen mit den in `RUNNER_LABELS` defi
 | Docker-Befehle schlagen fehl | Socket nicht gemountet | `docker compose down && docker compose up -d` |
 | Runner deregistriert sich | PAT abgelaufen | Neuen PAT erstellen und `.env` aktualisieren |
 | `Permission denied` auf Socket | Docker Desktop nicht gestartet | Docker Desktop starten |
+| `mvn: command not found` (exit 127) | Maven nicht im Runner-Image | Siehe Abschnitt 9.2 |
+| Container crasht sofort, startet neu | Falsche `REPO_URL` in `.env` | Siehe Abschnitt 9.1 |
+
+---
+
+## 9. Bekannte Probleme & Lösungen (aus der Praxis)
+
+### 9.1 Container-Crash-Loop: `REPO_URL` Platzhalter
+
+**Symptom:** Der Container startet, crasht sofort und wird von `restart: unless-stopped` endlos neu gestartet. `docker compose logs` zeigt:
+```
+curl: (22) The requested URL returned error: 404
+Invalid configuration provided for token. Terminating unattended configuration.
+```
+
+**Ursache:** In `runner/.env` wurde der Platzhalter `REPO_NAME` aus `.env.example` nicht ersetzt:
+```env
+# Falsch – Platzhalter nicht ersetzt
+REPO_URL=https://github.com/DerDexBot/REPO_NAME
+
+# Richtig
+REPO_URL=https://github.com/DerDexBot/Modul_324_DevOps
+```
+
+**Lösung:** `.env` öffnen, `REPO_NAME` durch den tatsächlichen Repository-Namen ersetzen, dann `docker compose up -d`.
+
+**Diagnose-Befehl:**
+```bash
+docker compose logs --tail=20
+```
+
+---
+
+### 9.2 `mvn: command not found` (exit code 127)
+
+**Symptom:** CI Backend schlägt in ~13 Sekunden fehl. Der Job-Log auf GitHub zeigt:
+```
+/tmp/github-runner-work/_temp/xxx.sh: line 1: mvn: command not found
+##[error]Process completed with exit code 127.
+```
+
+**Ursache:** `myoung34/github-runner` basiert auf einem minimalen Ubuntu-Image – Maven ist **nicht** vorinstalliert. `actions/setup-java` installiert nur den JDK, nicht Maven.
+
+> **Wichtig:** Auf GitHub-hosted `ubuntu-latest` Runnern ist Maven immer vorinstalliert. Beim Wechsel auf einen Self-Hosted Runner muss Maven explizit bereitgestellt werden.
+
+**Lösung:** In `ci.yml` und `cd.yml` vor dem Maven-Schritt einfügen:
+```yaml
+- name: Install Maven
+  run: sudo apt-get update -qq && sudo apt-get install -y maven
+```
+
+**Vergleich vorinstallierte Tools:**
+
+| Tool | GitHub-hosted `ubuntu-latest` | `myoung34/github-runner` |
+|---|---|---|
+| Java (JDK) | ✅ mehrere Versionen | ❌ via `actions/setup-java` |
+| Maven | ✅ vorinstalliert | ❌ manuell installieren |
+| Node.js | ✅ mehrere Versionen | ❌ via `actions/setup-node` |
+| Docker CLI | ✅ vorinstalliert | ✅ vorinstalliert |
+| Git | ✅ vorinstalliert | ✅ vorinstalliert |
