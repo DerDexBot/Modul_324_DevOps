@@ -169,4 +169,66 @@ describe('App', () => {
         expect(screen.getByText(/Erledigte Aufgabe/)).toBeInTheDocument()
         expect(screen.queryByText(/Offene Aufgabe/)).not.toBeInTheDocument()
     })
+
+    test('bearbeitet eine bestehende Aufgabe per PUT und lädt die aktualisierte Liste neu', async () => {
+        globalThis.fetch
+            .mockResolvedValueOnce(await mockJsonResponse([{ id: 1, taskdescription: 'Alte Aufgabe', done: false }]))
+            .mockResolvedValueOnce(await mockJsonResponse({ id: 1, taskdescription: 'Aktualisierte Aufgabe', done: false }))
+            .mockResolvedValueOnce(await mockJsonResponse([{ id: 1, taskdescription: 'Aktualisierte Aufgabe', done: false }]))
+
+        const user = userEvent.setup()
+        render(<App />)
+
+        await screen.findByText('Task 1: Alte Aufgabe')
+        await user.click(screen.getByRole('button', { name: 'Bearbeiten' }))
+        const editInput = screen.getByDisplayValue('Alte Aufgabe')
+        await user.clear(editInput)
+        await user.type(editInput, 'Aktualisierte Aufgabe')
+        await user.click(screen.getByRole('button', { name: 'Speichern' }))
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenNthCalledWith(
+                2,
+                `${API_URL}/tasks/1`,
+                expect.objectContaining({
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskdescription: 'Aktualisierte Aufgabe' })
+                })
+            )
+        })
+
+        expect(await screen.findByText('Task 1: Aktualisierte Aufgabe')).toBeInTheDocument()
+        expect(screen.queryByDisplayValue('Aktualisierte Aufgabe')).not.toBeInTheDocument()
+    })
+
+    test('löscht eine Aufgabe per DELETE und entfernt sie nach dem Neuladen aus der Liste', async () => {
+        globalThis.fetch
+            .mockResolvedValueOnce(
+                await mockJsonResponse([
+                    { id: 1, taskdescription: 'Zu löschende Aufgabe', done: false },
+                    { id: 2, taskdescription: 'Bleibende Aufgabe', done: false }
+                ])
+            )
+            .mockResolvedValueOnce(await mockJsonResponse(null))
+            .mockResolvedValueOnce(await mockJsonResponse([{ id: 2, taskdescription: 'Bleibende Aufgabe', done: false }]))
+
+        const user = userEvent.setup()
+        render(<App />)
+
+        await screen.findByText('Task 1: Zu löschende Aufgabe')
+        await user.click(screen.getAllByRole('button', { name: 'Löschen' })[0])
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenNthCalledWith(
+                2,
+                `${API_URL}/tasks/1`,
+                expect.objectContaining({ method: 'DELETE' })
+            )
+        })
+
+        expect(await screen.findByText('Task 1: Bleibende Aufgabe')).toBeInTheDocument()
+        expect(screen.queryByText(/Zu löschende Aufgabe/)).not.toBeInTheDocument()
+    })
+
 })
