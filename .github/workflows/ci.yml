@@ -23,6 +23,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Install Maven
+        run: sudo apt-get update -qq && sudo apt-get install -y maven
+
       - name: Build & Test
         working-directory: backend
         run: mvn -B verify

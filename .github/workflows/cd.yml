@@ -25,6 +25,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Install Maven
+        run: sudo apt-get update -qq && sudo apt-get install -y maven
+
       - name: Build JAR
         working-directory: backend
         run: mvn package -DskipTests -B
