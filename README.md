@@ -1,41 +1,224 @@
-# Kurzanleitung für die Installation der Entwicklungsumgebung zum Basisprojekt im Modul 324
+# Modul 324 DevOps – ToDo-Applikation
 
-## TLDR
+**Projekt:** M324 Schul-Projekt | **Team:** Rudy & Martin | **Stack:** React · Spring Boot · MySQL · Docker · GitHub Actions
 
-ToDo-Liste mit React (frontend) und Spring (backend). Weitere Details sind in den
-Kommentaren vor allem in App.js zu finden.
+---
 
-**Liebe Lernende, bitte FORKT dieses Repo für M324, und macht die Pull-Requests in euren FORKS.**
+## Inhalt
 
-## Relevante Dateien in den Teil-Projekten (Verzeichnisse):
+- [Architektur](#architektur)
+- [CI/CD-Pipeline](#cicd-pipeline)
+- [Self-Hosted Runner](#self-hosted-runner)
+- [Lokale Entwicklung](#lokale-entwicklung)
+- [Tests ausführen](#tests-ausführen)
+- [Dokumentation](#dokumentation)
 
-1. diese Beschreibung
-2. frontend (Tools: npm und VSCode)
-	* App.js
+---
 
-3. backend (Eclipse oder VS-Code)
-	* DemoApplication.java
-	* Task.java
-	* pom.xml (JAR configuration, mit div. Plugins s.u.)
+## Architektur
 
-## Inbetriebnahme
+```mermaid
+flowchart LR
+    subgraph Client["Browser"]
+        FE["React + Vite\nlocalhost:5173"]
+    end
 
-1. forken oder clonen
-1. *backend* in Eclipse importieren und mit Maven starten, oder in VS-Code via Java Extension Pack. Ohne Persistenz - nach dem Serverneustart sind die Todos futsch. Läuft auf default port 8080.
-2. Im Terminal im *frontend* Verzeichnis
-	1. mit `npm install` benötige Module laden
-	2. mit `npm run dev` den Frontend-Server starten
+    subgraph Server["Backend"]
+        BE["Spring Boot\nlocalhost:8080"]
+    end
 
-## Benutzung
+    subgraph DB["Datenbank"]
+        MY[("MySQL 8.4\nPort 3306")]
+    end
 
-1. http://localhost:5173 zeigt das Frontend an. Hier kann man Tasks eingeben, die sofort darunter in der Liste mit einem *Done*-Button angezeigt werden.
-2. Klickt man auf den *Done*-Button eines Tasks wird dieser aus der Liste entfernt (und natürlich auch von Backend-Server).
-3. Die Task Beschreibungen müssen eindeutig (bzw. einmalig) sein.
+    subgraph Registry["GitHub Container Registry"]
+        IMG["ghcr.io/derdexbot/\ntodo-backend:latest"]
+    end
 
-### Anstehende Aufgaben
+    FE -- REST API\nHTTP/JSON --> BE
+    BE -- JPA/Hibernate --> MY
+    IMG -- docker run --> BE
+```
 
-- Erweiterung der Funktionalität durch die Lernenden
-- Alternatives Backend für eine VM (WAR Konfiguration)
-- Test Umbegung mit Unit-Tests erweitern
+---
 
-(Ausgaben für white-box debugging sind bereits auf den beiden Server vorhanden)
+## CI/CD-Pipeline
+
+Jeder Push und Pull Request auf `main` löst automatisch die Pipelines aus.
+
+```mermaid
+flowchart TD
+    DEV([Developer\ngit push]) --> MAIN[main Branch\nauf GitHub]
+
+    MAIN --> CIB & CIF
+
+    subgraph CIB_block["CI Backend  ·  ci.yml"]
+        CIB["JDK 21 einrichten\n↓\nmvn verify\n31 Tests\n↓\nCodeQL Analyse"]
+    end
+
+    subgraph CIF_block["CI Frontend  ·  ci-frontend.yml"]
+        CIF["Node.js 24 einrichten\n↓\nnpm ci\n↓\nJest – 9 Tests\n↓\nESLint"]
+    end
+
+    CIB --> GATE{CI Backend\nerfolgreich?}
+    GATE -- Nein --> STOP([Kein Image\ngebaut])
+    GATE -- Ja --> CD
+
+    subgraph CD_block["CD  ·  cd.yml"]
+        CD["JAR bauen\nmvn package -DskipTests\n↓\nDocker Image bauen\n↓\nPush zu ghcr.io"]
+    end
+
+    CD --> TAG1([todo-backend:latest])
+    CD --> TAG2([todo-backend:sha-&lt;commit&gt;])
+
+    CIF --> FSTATUS([Frontend\nTests OK ✓])
+```
+
+> **Alle drei Pipelines laufen auf dem lokalen Self-Hosted Runner** (Docker-Container auf dem eigenen Rechner).
+
+---
+
+## Self-Hosted Runner
+
+Die GitHub-Actions-Jobs werden nicht auf GitHub-VMs, sondern auf einem **lokalen Docker-Container** ausgeführt. Der Runner verbindet sich via HTTPS zu GitHub und holt Jobs ab – kein eingehender Port nötig.
+
+```mermaid
+sequenceDiagram
+    participant GH as GitHub
+    participant R as Runner (Docker)
+    participant D as Docker Daemon (Host)
+    participant GHCR as ghcr.io
+
+    GH->>R: Job bereitstellen (polling)
+    R->>R: Schritte ausführen (Tests, Build)
+    R->>D: docker build (via Socket-Mount)
+    D->>GHCR: docker push (CD-Pipeline)
+    R->>GH: Ergebnis melden
+```
+
+### Runner starten
+
+**1. PAT erstellen**
+
+GitHub → Settings → Developer Settings → Personal Access Tokens → Tokens (classic)
+- Scope: **`repo`** (vollständig)
+
+**2. `.env`-Datei anlegen**
+
+```bash
+cd runner
+cp .env.example .env
+```
+
+```env
+REPO_URL=https://github.com/DerDexBot/Modul_324_DevOps
+ACCESS_TOKEN=ghp_DEIN_TOKEN_HIER
+RUNNER_NAME=local-docker-runner
+RUNNER_LABELS=self-hosted,linux,x64
+```
+
+**3. Runner starten**
+
+```bash
+docker compose up -d
+```
+
+**4. Status prüfen**
+
+GitHub → Repository → Settings → Actions → Runners → Runner erscheint als **Idle**
+
+```mermaid
+flowchart LR
+    subgraph Rechner["Lokaler Rechner (Windows 11)"]
+        subgraph DockerDesktop["Docker Desktop (WSL2)"]
+            R["github-runner\nLinux-Container"]
+            SOCK["Docker-Socket\n/var/run/docker.sock"]
+            R -- nutzt --> SOCK
+        end
+        DAEMON["Docker Daemon"]
+        SOCK --> DAEMON
+    end
+
+    R -- HTTPS polling --> GH["GitHub Actions API"]
+    DAEMON -- push --> GHCR["ghcr.io"]
+```
+
+---
+
+## Lokale Entwicklung
+
+### Voraussetzungen
+
+- Java 21
+- Node.js 24
+- Docker Desktop
+- Maven
+
+### Backend starten
+
+```bash
+cd backend
+./mvnw spring-boot:run
+# Läuft auf http://localhost:8080
+```
+
+> Für Persistenz: MySQL über Docker Compose starten (siehe `backend/`).
+
+### Frontend starten
+
+```bash
+cd frontend
+npm install
+npm run dev
+# Läuft auf http://localhost:5173
+```
+
+---
+
+## Tests ausführen
+
+### Backend (31 Tests)
+
+```bash
+cd backend
+./mvnw verify
+```
+
+| Schicht | Testklasse | Tests |
+|---|---|---|
+| Repository | `TaskRepositoryTest` | 9 |
+| Service | `TaskServiceTest` | 10 |
+| Controller | `TaskControllerTest` | 11 |
+| Kontext | `DemoApplicationTests` | 1 |
+
+### Frontend (9 Tests)
+
+```bash
+cd frontend
+npm test -- --watchAll=false
+```
+
+| Kategorie | Tests |
+|---|---|
+| Grundfunktionen (Laden, Erstellen, Validierung) | 3 |
+| US-20: Filter (Alle / Offen / Erledigt) | 3 |
+| US-21: Fortschrittsbalken | 3 |
+
+---
+
+## Dokumentation
+
+Alle Docs liegen unter `backend/docs/`:
+
+| Thema | Pfad |
+|---|---|
+| CI Frontend | `docs/CI/ci-frontend-dokumentation.md` |
+| Self-Hosted Runner | `docs/CI/runner-dokumentation.md` |
+| CD / Docker | `docs/CD/cd-dokumentation.md` |
+| Testplan | `docs/Testing/testplan.md` |
+| Testdurchführung | `docs/Testing/testdurchfuehrung.md` |
+| Testprotokolle | `docs/Testing/testprotokoll.md` |
+| Branching-Strategie | `docs/Branching-Strategie/branching-strategie.md` |
+| Pull Requests | `docs/Pull-Requests/pull-requests.md` |
+| User Stories | `docs/userStories/userStories.md` |
+| Arbeitsjournale | `docs/Arbeitsjournale/` |
