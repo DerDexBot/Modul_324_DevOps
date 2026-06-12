@@ -31,17 +31,18 @@ Dieser Testplan beschreibt die Teststrategie für das Spring-Boot-Backend der To
 
 Das Projekt folgt der klassischen Testpyramide mit drei Ebenen. Jede Schicht hat einen klar definierten Testzweck:
 
-```
-         ┌──────────────────────────┐
-         │   Integrationstests      │  ← TaskControllerTest (MockMvc)
-         │   (wenige, langsamer)    │
-         ├──────────────────────────┤
-         │   Service-Unit-Tests     │  ← TaskServiceTest (Mockito)
-         │   (mittel, schnell)      │
-         ├──────────────────────────┤
-         │   Repository-Tests       │  ← TaskRepositoryTest (@DataJpaTest)
-         │   (viele, sehr schnell)  │
-         └──────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Integration["Integrationstests · wenige · langsamer"]
+        CT["TaskControllerTest\n11 Tests\n@SpringBootTest + MockMvc\nPrüft HTTP-Schnittstelle End-to-End"]
+    end
+    subgraph Service["Service-Unit-Tests · mittel · schnell"]
+        ST["TaskServiceTest\n10 Tests\nMockito · kein Spring-Kontext\nPrüft Geschäftslogik isoliert"]
+    end
+    subgraph Repo["Repository-Tests · viele · sehr schnell"]
+        RT["TaskRepositoryTest\n9 Tests\n@DataJpaTest + H2 In-Memory\nPrüft JPA-Persistierung"]
+    end
+    Repo --> Service --> Integration
 ```
 
 | Schicht | Testklasse | Testart | Spring-Kontext |

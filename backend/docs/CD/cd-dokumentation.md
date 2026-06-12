@@ -23,34 +23,30 @@ In diesem Projekt wird **Continuous Delivery** umgesetzt: Nach jedem erfolgreich
 
 ## 2. Übersicht: CI/CD-Pipeline
 
-```
-Push auf main
-    │
-    ▼
-┌─────────────────────────────┐
-│  CI-Pipeline (ci.yml)       │
-│  - JDK 21 einrichten        │
-│  - CodeQL initialisieren    │
-│  - mvn verify (alle Tests)  │
-│  - CodeQL analysieren       │
-└────────────┬────────────────┘
-             │ nur wenn CI erfolgreich
-             ▼
-┌─────────────────────────────┐
-│  CD-Pipeline (cd.yml)       │
-│  - JDK 21 einrichten        │
-│  - mvn package (JAR bauen)  │
-│  - Docker Login (ghcr.io)   │
-│  - Docker Image bauen       │
-│  - Image pushen             │
-└─────────────────────────────┘
-             │
-             ▼
-    ghcr.io/derdexbot/todo-backend:latest
-    ghcr.io/derdexbot/todo-backend:sha-<commit>
+```mermaid
+flowchart TD
+    A([Push auf main]) --> B & C
+
+    B["**CI Backend**\nci.yml\nJDK 21 · mvn verify · CodeQL\n31 Tests"]
+    C["**CI Frontend**\nci-frontend.yml\nNode.js 20 · Jest · ESLint\n9 Tests"]
+
+    B --> D{CI Backend OK?}
+    D -- Nein --> E([Pipeline stoppt\nKein Docker-Image])
+    D -- Ja --> F["**CD-Pipeline**\ncd.yml"]
+
+    C --> G{CI Frontend OK?}
+    G -- Nein --> H([Pipeline stoppt\nPR blockiert])
+    G -- Ja --> I([Tests bestanden ✓])
+
+    F --> J[JAR bauen\nmvn package -DskipTests]
+    J --> K[Docker Image bauen]
+    K --> L[Push zu ghcr.io]
+
+    L --> M([todo-backend:latest])
+    L --> N([todo-backend:sha-&lt;commit&gt;])
 ```
 
-**Wichtig:** Die CD-Pipeline startet **nur**, wenn die CI-Pipeline erfolgreich durchgelaufen ist. Schlagen Tests fehl, wird kein Image gebaut.
+**Wichtig:** Die CD-Pipeline startet **nur**, wenn die CI Backend-Pipeline erfolgreich durchgelaufen ist. Schlagen Tests fehl, wird kein Image gebaut. CI Backend und CI Frontend laufen **parallel** – die CD hängt nur vom Backend-CI ab, da nur das Backend als Docker-Image ausgeliefert wird.
 
 ---
 

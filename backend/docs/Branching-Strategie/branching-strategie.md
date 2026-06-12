@@ -125,6 +125,19 @@ Wir haben folgende Regeln für unseren Workflow definiert:
 6. Nach der Freigabe (Approve) wird der Pull Request gemergt
 7. Der Feature-Branch wird nach dem Merge gelöscht
 
+### Workflow-Diagramm
+
+```mermaid
+flowchart LR
+    A([Branch erstellen\ngit checkout -b feature/X]) --> B[Entwickeln &\nCommits pushen]
+    B --> C([Pull Request\nauf GitHub erstellen])
+    C --> D[Code Review\ndurch Teammitglied]
+    D --> E{Approved?}
+    E -- Nein --> B
+    E -- Ja --> F([Merge in main\nCI muss grün sein])
+    F --> G([Branch löschen])
+```
+
 ---
 
 ## Umsetzung am Projekt
@@ -146,6 +159,25 @@ Im Rahmen dieser Aufgabe haben wir folgende Branches erstellt und per Pull Reque
 5. Martin reviewed den PR und gibt ein Approve
 6. Rudy mergt den PR
 7. Branch wird gelöscht
+
+### Git-Verlauf (GitHub Flow)
+
+```mermaid
+gitGraph
+   commit id: "Initial commit"
+   branch feature/test-Rudy
+   checkout feature/test-Rudy
+   commit id: "Testbranch Rudy"
+   commit id: "Tests hinzufügen"
+   checkout main
+   merge feature/test-Rudy id: "PR #1 gemergt"
+   branch feature/neue-funktion
+   checkout feature/neue-funktion
+   commit id: "Feature implementieren"
+   commit id: "Dokumentation"
+   checkout main
+   merge feature/neue-funktion id: "PR #2 gemergt"
+```
 
 ---
 
