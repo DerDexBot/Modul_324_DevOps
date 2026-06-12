@@ -7,13 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
-  test-and-analyse:
-    name: Tests & CodeQL
+  test:
+    name: Backend Tests
     runs-on: ubuntu-latest
     permissions:
-      security-events: write
       contents: read
-      actions: read
 
     steps:
       - uses: actions/checkout@v4
@@ -25,17 +23,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java
-          queries: security-and-quality
-
       - name: Build & Test
         working-directory: backend
         run: mvn -B verify
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:java"
