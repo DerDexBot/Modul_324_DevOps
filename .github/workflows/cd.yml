@@ -7,13 +7,12 @@ on:
     branches: [main]
 
 jobs:
-  build-and-push:
-    name: Build · Artifact · Docker Push
+  build:
+    name: Build JAR · Artifact
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v4
@@ -36,18 +35,27 @@ jobs:
           path: backend/target/*.jar
           retention-days: 30
 
-      - name: Log in to GitHub Container Registry
+  deploy:
+    name: Docker Push · Docker Hub
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/todo-backend
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/todo-backend
           tags: |
             type=raw,value=latest
             type=sha,prefix=sha-
