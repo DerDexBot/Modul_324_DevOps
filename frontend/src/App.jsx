@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import logo from './assets/react.svg'
 import './App.css'
 
-const API_URL = 'http://localhost:8080'
+const API_URL = '/api'
 
 function App() {
     const [todos, setTodos] = useState([])
