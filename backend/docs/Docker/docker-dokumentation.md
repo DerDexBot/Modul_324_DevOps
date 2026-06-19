@@ -224,7 +224,103 @@ docker compose up
 
 ---
 
-## 5. Images auf Docker Hub
+## 5. API-Proxy – Entwicklung vs. Produktion
+
+### Das Problem mit hardcodierten URLs
+
+Früher stand im Frontend:
+```js
+const API_URL = 'http://localhost:8080'
+```
+
+Das funktioniert nur lokal mit direktem Backend-Zugriff. In Docker, Kubernetes oder anderen Umgebungen ändert sich der Host – das Image müsste für jede Umgebung neu gebaut werden.
+
+### Die Lösung: Relative URL + Proxy
+
+Die App verwendet nun `/api` als Basis-URL:
+```js
+const API_URL = '/api'
+```
+
+Der Browser schickt `/api/tasks` immer an den Server von dem die Seite geladen wurde. Wer dann den Proxy macht hängt von der Umgebung ab – der Code bleibt identisch.
+
+```mermaid
+flowchart TD
+    A["const API_URL = '/api'\nidentisch in allen Umgebungen"] --> B & C
+
+    subgraph DEV["Entwicklung: npm run dev"]
+        B["Browser\nlocalhost:5173/api/tasks"]
+        B --> D["Vite Dev-Server\nvite.config.js proxy"]
+        D --> E["http://localhost:8080/tasks"]
+    end
+
+    subgraph PROD["Produktion: docker compose up"]
+        C["Browser\nlocalhost:3000/api/tasks"]
+        C --> F["nginx\nnginx.conf proxy_pass"]
+        F --> G["http://backend:8080/tasks"]
+    end
+```
+
+### nginx Reverse Proxy (`frontend/nginx.conf`)
+
+In Produktion (Docker) übernimmt nginx den Proxy:
+
+```nginx
+location /api/ {
+    proxy_pass http://backend:8080/;
+}
+```
+
+`/api/` wird abgefangen und an den `backend`-Service weitergeleitet. Der `/api`-Prefix wird dabei weggeschnitten — das Backend kennt die Route als `/tasks`, nicht als `/api/tasks`.
+
+`backend` ist der Service-Name aus `docker-compose.yml`. Im Docker-Netzwerk wird dieser Name automatisch zur internen IP aufgelöst.
+
+### Vite Dev-Proxy (`frontend/vite.config.js`)
+
+In der Entwicklung (`npm run dev`) übernimmt Vite den gleichen Job:
+
+```js
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080',
+      rewrite: path => path.replace(/^\/api/, '')
+    }
+  }
+}
+```
+
+| Eigenschaft | Wert | Erklärung |
+|---|---|---|
+| `'/api'` | Pfad-Prefix | Alle Anfragen die mit `/api` beginnen werden abgefangen |
+| `target` | `http://localhost:8080` | Ziel: lokal laufendes Backend |
+| `rewrite` | `/api` entfernen | `/api/tasks` → `/tasks` |
+
+### Vergleich der beiden Umgebungen
+
+| Aspekt | `npm run dev` | `docker compose up` |
+|---|---|---|
+| Frontend läuft auf | Port 5173 (Vite) | Port 3000 (nginx) |
+| Proxy übernimmt | Vite Dev-Server | nginx |
+| Backend-Adresse intern | `localhost:8080` | `backend:8080` (Docker-Netzwerk) |
+| Code-Änderung nötig | Nein | Nein |
+
+### Voraussetzung für `npm run dev`
+
+Das Backend muss lokal erreichbar sein. Entweder:
+```bash
+# Nur DB und Backend via Docker starten
+docker compose up db backend
+
+# Dann Frontend lokal entwickeln
+cd frontend && npm run dev
+```
+
+Oder das Backend direkt via Maven starten (erfordert lokale MySQL-Instanz).
+
+---
+
+## 6. Images auf Docker Hub
 
 | Image | URL |
 |---|---|
