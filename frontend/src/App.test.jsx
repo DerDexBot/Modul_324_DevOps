@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 
-const API_URL = 'http://localhost:8080'
+const API_URL = '/api'
 
 function mockJsonResponse(data, ok = true) {
     return Promise.resolve({
