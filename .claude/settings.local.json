@@ -5,7 +5,31 @@
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
       "PowerShell(cd \"C:\\\\Program Files\\\\JetBrains\\\\Intelij\\\\Modul_324_DevOps\\\\backend\\\\src\" ; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -match '\\\\.\\(java|properties|yml|yaml\\)$' } | ForEach-Object { $_.FullName } | Sort-Object)",
-      "Bash(mvn test *)"
+      "Bash(mvn test *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh run *)",
+      "Bash(gh.exe run *)",
+      "PowerShell(gh run *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(git merge *)",
+      "PowerShell(gh *)",
+      "Bash(git pull *)",
+      "Bash(npm test *)",
+      "Bash(npx jest *)",
+      "Bash(node_modules\\\\.bin\\\\jest --watchAll=false)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Program Files\\\\JetBrains\\\\Intelij\\\\Modul_324_DevOps\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(docker compose *)",
+      "Bash(docker exec *)",
+      "Bash(docker volume *)",
+      "Bash(docker run *)",
+      "Bash(awk '/\"workflow_runs\"/,0' /tmp/runs.json)",
+      "Bash(./mvnw -B verify)",
+      "Bash(mvn -B verify)"
     ]
   }
 }

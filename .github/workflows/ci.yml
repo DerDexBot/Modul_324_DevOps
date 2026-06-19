@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Backend Tests
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
@@ -22,9 +22,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-
-      - name: Install Maven
-        run: sudo apt-get update -qq && sudo apt-get install -y maven
 
       - name: Build & Test
         working-directory: backend
