@@ -31,7 +31,7 @@ flowchart TD
     G -- Ja --> I([Tests bestanden ✓])
 
     F --> J["JAR bauen · Docker Image · Push"]
-    J --> K([ghcr.io/derdexbot/todo-backend:latest])
+    J --> K([Docker Hub\nderdexbot/todo-backend:latest\nderdexbot/todo-frontend:latest])
 ```
 
 **Wichtig:** CI Backend und CI Frontend laufen **parallel und unabhängig** voneinander. Die CD-Pipeline hängt nur vom CI Backend ab (da nur das Backend als Docker-Image ausgeliefert wird).
@@ -66,7 +66,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
       - name: Run Jest tests
         working-directory: frontend
@@ -105,9 +105,11 @@ Identisch zum Backend-CI: Der Workflow läuft bei jedem Push auf `main` und bei 
 | `npm run build` | Produktions-Build | Vite bündelt und optimiert alle Assets nach `dist/` |
 | `actions/upload-artifact@v4` | dist/ als Artefakt hochladen | 30 Tage downloadbar, nur bei bestandenen Tests |
 
-### Warum `npm ci` statt `npm install`?
+### Warum `npm install` statt `npm ci`?
 
-`npm ci` liest die `package-lock.json` exakt und verändert sie nicht. Dies garantiert, dass in der CI-Umgebung exakt die gleichen Versionen verwendet werden wie lokal – keine unerwarteten Updates durch `npm install`.
+`npm ci` erfordert, dass `package.json` und `package-lock.json` exakt synchron sind. Da das Lock-File auf Windows generiert wird, fehlen Linux-spezifische optionale Pakete (z.B. `@emnapi/core`, `@emnapi/runtime`). Der Ubuntu-Runner erwartet diese Einträge und `npm ci` schlägt mit `EUSAGE` fehl.
+
+`npm install` ist toleranter: es installiert alle Pakete korrekt und aktualisiert das Lock-File bei Bedarf, ohne den Build zu blockieren.
 
 ### Warum `--watchAll=false`?
 

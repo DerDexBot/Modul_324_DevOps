@@ -161,17 +161,15 @@ volumes:
 
 ## 5. Workflow-Konfiguration: `runs-on`
 
-Alle drei Workflow-Dateien wurden auf den lokalen Runner umgestellt:
+### Aktueller Stand (ab 19.06.2026): GitHub-hosted Runner
+
+Alle drei Workflow-Dateien wurden zurück auf den GitHub-hosted Runner umgestellt:
 
 ```yaml
-# Vorher (GitHub-hosted)
 runs-on: ubuntu-latest
-
-# Nachher (Self-hosted)
-runs-on: [self-hosted, linux, x64]
 ```
 
-Die Labels `self-hosted`, `linux`, `x64` müssen mit den in `RUNNER_LABELS` definierten Labels übereinstimmen. GitHub wählt automatisch einen passenden Runner aus, wenn ein Job scheduled wird.
+**Grund:** Der Self-Hosted Runner belastet den lokalen Rechner unnötig und muss aktiv laufen damit Pipelines ausgeführt werden können. GitHub-hosted Runner stehen immer zur Verfügung und verursachen keine lokale Last.
 
 **Betroffene Dateien:**
 
@@ -180,6 +178,17 @@ Die Labels `self-hosted`, `linux`, `x64` müssen mit den in `RUNNER_LABELS` defi
 | CI Backend | `.github/workflows/ci.yml` |
 | CI Frontend | `.github/workflows/ci-frontend.yml` |
 | CD | `.github/workflows/cd.yml` |
+
+### Früherer Stand: Self-Hosted Runner
+
+In einer früheren Phase wurde der Self-Hosted Runner verwendet:
+
+```yaml
+# Früher (Self-hosted)
+runs-on: [self-hosted, linux, x64]
+```
+
+Der Self-Hosted Runner bietet sich an wenn unbegrenzte Build-Minuten oder voller Docker-Zugriff auf dem Host benötigt werden. Für dieses Schulprojekt ist `ubuntu-latest` ausreichend.
 
 ---
 
