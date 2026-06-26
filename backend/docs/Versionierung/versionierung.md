@@ -148,7 +148,7 @@ Wir haben uns für **URL Path Versioning** entschieden.
 - **Industriestandard:** GitHub, Stripe, PayPal und viele weitere APIs setzen auf diese Methode.
 - **Caching:** Proxies und Browser können `/v1/tasks` und `/v2/tasks` getrennt cachen.
 
-Der einzige Nachteil – die Version ist nicht «rein REST» weil sie eine technische Eigenschaft in der URL ausdrückt – ist für unser Schulprojekt vernachlässigbar.
+Der einzige Nachteil – die Version ist nicht «rein REST» weil sie eine technische Eigenschaft in der URL ausdrückt.
 
 ---
 
