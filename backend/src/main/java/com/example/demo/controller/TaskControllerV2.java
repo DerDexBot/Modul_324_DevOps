@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.TaskListResponse;
 import com.example.demo.dto.TaskRequest;
 import com.example.demo.entity.Task;
 import com.example.demo.service.TaskService;
@@ -7,22 +8,20 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/v1/tasks")
+@RequestMapping("/v2/tasks")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000"})
-public class TaskController {
+public class TaskControllerV2 {
 
     private final TaskService taskService;
 
-    public TaskController(TaskService taskService) {
+    public TaskControllerV2(TaskService taskService) {
         this.taskService = taskService;
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
-        return taskService.findAll();
+    public TaskListResponse getAllTasks() {
+        return new TaskListResponse(taskService.findAll());
     }
 
     @PostMapping

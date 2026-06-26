@@ -55,7 +55,7 @@ class TaskControllerTest {
     @Test
     @DisplayName("GET /tasks – leere Liste, wenn keine Tasks vorhanden")
     void getAllTasks_shouldReturnEmptyList() throws Exception {
-        mockMvc.perform(get("/tasks"))
+        mockMvc.perform(get("/v1/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(0)));
@@ -67,7 +67,7 @@ class TaskControllerTest {
         taskRepository.save(new Task("Erste Aufgabe"));
         taskRepository.save(new Task("Zweite Aufgabe"));
 
-        mockMvc.perform(get("/tasks"))
+        mockMvc.perform(get("/v1/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].taskdescription", is("Erste Aufgabe")))
@@ -81,7 +81,7 @@ class TaskControllerTest {
     void createTask_shouldReturn201WithCreatedTask() throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("taskdescription", "Neue Aufgabe"));
 
-        mockMvc.perform(post("/tasks")
+        mockMvc.perform(post("/v1/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -95,7 +95,7 @@ class TaskControllerTest {
     void createTask_withBlankDescription_shouldReturn400() throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("taskdescription", ""));
 
-        mockMvc.perform(post("/tasks")
+        mockMvc.perform(post("/v1/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -106,7 +106,7 @@ class TaskControllerTest {
     void createTask_shouldTrimWhitespace() throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("taskdescription", "  Aufgabe mit Leerzeichen  "));
 
-        mockMvc.perform(post("/tasks")
+        mockMvc.perform(post("/v1/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -121,7 +121,7 @@ class TaskControllerTest {
         Task saved = taskRepository.save(new Task("Alte Beschreibung"));
         String body = objectMapper.writeValueAsString(Map.of("taskdescription", "Neue Beschreibung"));
 
-        mockMvc.perform(put("/tasks/" + saved.getId())
+        mockMvc.perform(put("/v1/tasks/" + saved.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -134,7 +134,7 @@ class TaskControllerTest {
     void updateTask_withUnknownId_shouldReturn404() throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("taskdescription", "Aktualisierung"));
 
-        mockMvc.perform(put("/tasks/9999")
+        mockMvc.perform(put("/v1/tasks/9999")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
@@ -147,7 +147,7 @@ class TaskControllerTest {
     void markTaskDone_shouldSetDoneToTrue() throws Exception {
         Task saved = taskRepository.save(new Task("Noch nicht erledigt"));
 
-        mockMvc.perform(put("/tasks/" + saved.getId() + "/done"))
+        mockMvc.perform(put("/v1/tasks/" + saved.getId() + "/done"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.done", is(true)));
     }
@@ -155,7 +155,7 @@ class TaskControllerTest {
     @Test
     @DisplayName("PUT /tasks/{id}/done – 404 wenn Task-ID nicht existiert")
     void markTaskDone_withUnknownId_shouldReturn404() throws Exception {
-        mockMvc.perform(put("/tasks/9999/done"))
+        mockMvc.perform(put("/v1/tasks/9999/done"))
                 .andExpect(status().isNotFound());
     }
 
@@ -166,14 +166,14 @@ class TaskControllerTest {
     void deleteTask_shouldReturn204() throws Exception {
         Task saved = taskRepository.save(new Task("Zu löschende Aufgabe"));
 
-        mockMvc.perform(delete("/tasks/" + saved.getId()))
+        mockMvc.perform(delete("/v1/tasks/" + saved.getId()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     @DisplayName("DELETE /tasks/{id} – 404 wenn Task-ID nicht existiert")
     void deleteTask_withUnknownId_shouldReturn404() throws Exception {
-        mockMvc.perform(delete("/tasks/9999"))
+        mockMvc.perform(delete("/v1/tasks/9999"))
                 .andExpect(status().isNotFound());
     }
 }

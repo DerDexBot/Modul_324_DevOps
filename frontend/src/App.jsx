@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import logo from './assets/react.svg'
 import './App.css'
 
-const API_URL = '/api'
+const API_URL = '/api/v1'
 
 function App() {
     const [todos, setTodos] = useState([])

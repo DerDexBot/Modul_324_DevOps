@@ -185,7 +185,7 @@ npm run dev
 
 ## Tests ausführen
 
-### Backend (31 Tests)
+### Backend (36 Tests)
 
 ```bash
 cd backend
@@ -196,7 +196,8 @@ cd backend
 |---|---|---|
 | Repository | `TaskRepositoryTest` | 9 |
 | Service | `TaskServiceTest` | 10 |
-| Controller | `TaskControllerTest` | 11 |
+| Controller V1 | `TaskControllerTest` | 11 |
+| Controller V2 | `TaskControllerV2Test` | 5 |
 | Kontext | `DemoApplicationTests` | 1 |
 
 ### Frontend (9 Tests)
@@ -229,4 +230,5 @@ Alle Docs liegen unter `backend/docs/`:
 | Branching-Strategie | `docs/Branching-Strategie/branching-strategie.md` |
 | Pull Requests | `docs/Pull-Requests/pull-requests.md` |
 | User Stories | `docs/userStories/userStories.md` |
+| API-Versionierung | `docs/Versionierung/versionierung.md` |
 | Arbeitsjournale | `docs/Arbeitsjournale/` |
