@@ -221,14 +221,14 @@ Alle Docs liegen unter `backend/docs/`:
 
 | Thema | Pfad |
 |---|---|
-| CI Frontend | `docs/CI/ci-frontend-dokumentation.md` |
-| Self-Hosted Runner | `docs/CI/runner-dokumentation.md` |
-| CD / Docker | `docs/CD/cd-dokumentation.md` |
-| Testplan | `docs/Testing/testplan.md` |
-| Testdurchführung | `docs/Testing/testdurchfuehrung.md` |
-| Testprotokolle | `docs/Testing/testprotokoll.md` |
-| Branching-Strategie | `docs/Branching-Strategie/branching-strategie.md` |
-| Pull Requests | `docs/Pull-Requests/pull-requests.md` |
-| User Stories | `docs/userStories/userStories.md` |
-| API-Versionierung | `docs/Versionierung/versionierung.md` |
-| Arbeitsjournale | `docs/Arbeitsjournale/` |
+| CI Frontend | [docs/CI/ci-frontend-dokumentation.md](backend/docs/CI/ci-frontend-dokumentation.md) |
+| Self-Hosted Runner | [docs/CI/runner-dokumentation.md](backend/docs/CI/runner-dokumentation.md) |
+| CD / Docker | [docs/CD/cd-dokumentation.md](backend/docs/CD/cd-dokumentation.md) |
+| Testplan | [docs/Testing/testplan.md](backend/docs/Testing/testplan.md) |
+| Testdurchführung | [docs/Testing/testdurchfuehrung.md](backend/docs/Testing/testdurchfuehrung.md) |
+| Testprotokolle | [docs/Testing/testprotokoll.md](backend/docs/Testing/testprotokoll.md) |
+| Branching-Strategie | [docs/Branching-Strategie/branching-strategie.md](backend/docs/Branching-Strategie/branching-strategie.md) |
+| Pull Requests | [docs/Pull-Requests/pull-requests.md](backend/docs/Pull-Requests/pull-requests.md) |
+| User Stories | [docs/userStories/userStories.md](backend/docs/userStories/userStories.md) |
+| API-Versionierung | [docs/Versionierung/versionierung.md](backend/docs/Versionierung/versionierung.md) |
+| Arbeitsjournale | [docs/Arbeitsjournale/](backend/docs/Arbeitsjournale/) |
