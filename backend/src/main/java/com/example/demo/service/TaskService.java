@@ -23,6 +23,10 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
+    public List<Task> findByDone(boolean done) {
+        return taskRepository.findByDone(done);
+    }
+
     public Task create(TaskRequest request) {
         String cleanedText = request.getTaskdescription().trim();
         Task task = new Task(cleanedText);

@@ -48,19 +48,71 @@ class TaskControllerV2Test {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.apiVersion", is("2.0")))
+                .andExpect(jsonPath("$.filter", is("all")))
                 .andExpect(jsonPath("$.total", is(2)))
                 .andExpect(jsonPath("$.data", hasSize(2)))
                 .andExpect(jsonPath("$.data[0].taskdescription", is("Erste Aufgabe")));
     }
 
     @Test
-    @DisplayName("GET /v2/tasks – leere Liste liefert total 0")
+    @DisplayName("GET /v2/tasks – leere Liste liefert total 0 und filter all")
     void getAllTasks_emptyList_shouldReturnTotalZero() throws Exception {
         mockMvc.perform(get("/v2/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.apiVersion", is("2.0")))
+                .andExpect(jsonPath("$.filter", is("all")))
                 .andExpect(jsonPath("$.total", is(0)))
                 .andExpect(jsonPath("$.data", hasSize(0)));
+    }
+
+    // ─── GET /v2/tasks?status=open ────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /v2/tasks?status=open – gibt nur offene Tasks zurück")
+    void getAllTasks_filterOpen_shouldReturnOnlyOpenTasks() throws Exception {
+        Task open = taskRepository.save(new Task("Offene Aufgabe"));
+        Task done = taskRepository.save(new Task("Erledigte Aufgabe"));
+        done.setDone(true);
+        taskRepository.save(done);
+
+        mockMvc.perform(get("/v2/tasks").param("status", "open"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filter", is("open")))
+                .andExpect(jsonPath("$.total", is(1)))
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].taskdescription", is("Offene Aufgabe")))
+                .andExpect(jsonPath("$.data[0].done", is(false)));
+    }
+
+    // ─── GET /v2/tasks?status=done ────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /v2/tasks?status=done – gibt nur erledigte Tasks zurück")
+    void getAllTasks_filterDone_shouldReturnOnlyDoneTasks() throws Exception {
+        taskRepository.save(new Task("Offene Aufgabe"));
+        Task done = taskRepository.save(new Task("Erledigte Aufgabe"));
+        done.setDone(true);
+        taskRepository.save(done);
+
+        mockMvc.perform(get("/v2/tasks").param("status", "done"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filter", is("done")))
+                .andExpect(jsonPath("$.total", is(1)))
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].taskdescription", is("Erledigte Aufgabe")))
+                .andExpect(jsonPath("$.data[0].done", is(true)));
+    }
+
+    @Test
+    @DisplayName("GET /v2/tasks?status=invalid – unbekannter Status liefert alle Tasks")
+    void getAllTasks_filterUnknown_shouldReturnAll() throws Exception {
+        taskRepository.save(new Task("Aufgabe 1"));
+        taskRepository.save(new Task("Aufgabe 2"));
+
+        mockMvc.perform(get("/v2/tasks").param("status", "invalid"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filter", is("all")))
+                .andExpect(jsonPath("$.total", is(2)));
     }
 
     // ─── POST /v2/tasks ───────────────────────────────────────────────────────

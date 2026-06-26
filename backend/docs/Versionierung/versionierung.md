@@ -233,33 +233,100 @@ public class TaskControllerV2 {
 ```mermaid
 flowchart TD
     V1["GET /v1/tasks\nTaskController"] --> SVC
-    V2["GET /v2/tasks\nTaskControllerV2"] --> SVC
-    SVC["TaskService.findAll()"] --> REPO["TaskRepository"]
+    V2["GET /v2/tasks?status=...\nTaskControllerV2"] --> SVC
+    SVC["TaskService"] --> REPO["TaskRepository"]
     REPO --> DB[("MySQL / H2")]
 
     V1 -- "List&lt;Task&gt;" --> R1["[{id, taskdescription, done}]"]
-    V2 -- "TaskListResponse" --> R2["{apiVersion, total, data: [...]}"]
+    V2 -- "TaskListResponse" --> R2["{apiVersion, filter, total, data: [...]}"]
 ```
 
-### Schritt 4: Tests anpassen
+### Schritt 4: V2-Feature – serverseitiger Status-Filter
 
-**Backend-Tests** (`TaskControllerTest.java`): Alle Pfade von `/tasks` auf `/v1/tasks` aktualisiert.
+V2 unterstützt einen optionalen `status`-Query-Parameter, mit dem die Filterliste direkt auf dem Server eingeschränkt werden kann. V1 kennt dieses Feature nicht – das Frontend filtert dort client-seitig.
 
-**Neue V2-Tests** (`TaskControllerV2Test.java`): Testen das erweiterte Antwortformat.
+```
+GET /v2/tasks              → alle Tasks (filter: "all")
+GET /v2/tasks?status=open  → nur offene Tasks (done=false)
+GET /v2/tasks?status=done  → nur erledigte Tasks (done=true)
+```
+
+**Repository** (`TaskRepository.java`) – Spring Data JPA leitet daraus automatisch ein `SELECT ... WHERE done = ?` ab:
 
 ```java
-@Test
-void getAllTasks_shouldReturnWrappedResponse() throws Exception {
-    taskRepository.save(new Task("Erste Aufgabe"));
+List<Task> findByDone(boolean done);
+```
 
-    mockMvc.perform(get("/v2/tasks"))
-        .andExpect(jsonPath("$.apiVersion", is("2.0")))
-        .andExpect(jsonPath("$.total", is(1)))
-        .andExpect(jsonPath("$.data[0].taskdescription", is("Erste Aufgabe")));
+**Service** (`TaskService.java`):
+
+```java
+public List<Task> findByDone(boolean done) {
+    return taskRepository.findByDone(done);
 }
 ```
 
-### Schritt 5: Frontend auf v1 umstellen
+**Controller V2** (`TaskControllerV2.java`):
+
+```java
+@GetMapping
+public TaskListResponse getAllTasks(@RequestParam(required = false) String status) {
+    List<Task> tasks;
+    String appliedFilter;
+
+    if ("open".equalsIgnoreCase(status)) {
+        tasks = taskService.findByDone(false);
+        appliedFilter = "open";
+    } else if ("done".equalsIgnoreCase(status)) {
+        tasks = taskService.findByDone(true);
+        appliedFilter = "done";
+    } else {
+        tasks = taskService.findAll();
+        appliedFilter = "all";
+    }
+
+    return new TaskListResponse(tasks, appliedFilter);
+}
+```
+
+Das `filter`-Feld in der Antwort teilt dem Client mit, welcher Filter angewendet wurde:
+
+```
+GET /v2/tasks?status=open
+```
+
+```json
+{
+  "apiVersion": "2.0",
+  "filter": "open",
+  "total": 1,
+  "data": [
+    { "id": 1, "taskdescription": "Noch offen", "done": false }
+  ]
+}
+```
+
+### Schritt 5: Tests anpassen
+
+**Backend-Tests** (`TaskControllerTest.java`): Alle Pfade von `/tasks` auf `/v1/tasks` aktualisiert.
+
+**Neue V2-Tests** (`TaskControllerV2Test.java`): Testen das erweiterte Antwortformat und den Status-Filter.
+
+```java
+@Test
+void getAllTasks_filterOpen_shouldReturnOnlyOpenTasks() throws Exception {
+    Task done = taskRepository.save(new Task("Erledigte Aufgabe"));
+    done.setDone(true);
+    taskRepository.save(done);
+    taskRepository.save(new Task("Offene Aufgabe"));
+
+    mockMvc.perform(get("/v2/tasks").param("status", "open"))
+        .andExpect(jsonPath("$.filter", is("open")))
+        .andExpect(jsonPath("$.total", is(1)))
+        .andExpect(jsonPath("$.data[0].done", is(false)));
+}
+```
+
+### Schritt 6: Frontend auf v1 umstellen
 
 **Datei:** `frontend/src/App.jsx`
 
@@ -276,11 +343,33 @@ Der Vite-Dev-Proxy und nginx leiten `/api/v1/tasks` korrekt an das Backend weite
 
 | Methode | V1-Endpunkt | V2-Endpunkt | Unterschied |
 |---|---|---|---|
-| `GET` | `/v1/tasks` | `/v2/tasks` | V2 gibt `{apiVersion, total, data}` statt roher Liste |
+| `GET` | `/v1/tasks` | `/v2/tasks` (opt. `?status=open` oder `?status=done`) | V2 gibt Wrapper-Objekt mit Metadaten zurück und unterstützt serverseitigen Filter |
 | `POST` | `/v1/tasks` | `/v2/tasks` | Identisch |
 | `PUT` | `/v1/tasks/{id}` | `/v2/tasks/{id}` | Identisch |
 | `PUT` | `/v1/tasks/{id}/done` | `/v2/tasks/{id}/done` | Identisch |
 | `DELETE` | `/v1/tasks/{id}` | `/v2/tasks/{id}` | Identisch |
+
+### V2-Antwortformat GET im Vergleich
+
+**V1** – rohe Liste:
+```json
+[
+  { "id": 1, "taskdescription": "Aufgabe 1", "done": false },
+  { "id": 2, "taskdescription": "Aufgabe 2", "done": true }
+]
+```
+
+**V2** – Wrapper mit Metadaten und optionalem Filter:
+```json
+{
+  "apiVersion": "2.0",
+  "filter": "open",
+  "total": 1,
+  "data": [
+    { "id": 1, "taskdescription": "Aufgabe 1", "done": false }
+  ]
+}
+```
 
 ---
 
@@ -291,9 +380,9 @@ Der Vite-Dev-Proxy und nginx leiten `/api/v1/tasks` korrekt an das Backend weite
 | Repository | `TaskRepositoryTest` | 9 |
 | Service | `TaskServiceTest` | 10 |
 | Controller V1 | `TaskControllerTest` | 11 |
-| Controller V2 | `TaskControllerV2Test` | 5 |
+| Controller V2 | `TaskControllerV2Test` | 8 |
 | Kontext | `DemoApplicationTests` | 1 |
-| **Total** | | **36** |
+| **Total** | | **39** |
 
 ---
 
@@ -301,9 +390,14 @@ Der Vite-Dev-Proxy und nginx leiten `/api/v1/tasks` korrekt an das Backend weite
 
 API-Versionierung ist eine wichtige DevOps-Praxis, um einen stabilen Betrieb zu gewährleisten wenn eine API weiterentwickelt wird. Für unser Projekt haben wir **URL Path Versioning** gewählt, weil es die klarste, am einfachsten testbare und in der Praxis am weitesten verbreitete Methode ist.
 
-Die Implementierung zeigt das Kernprinzip: Beide Versionen teilen sich dieselbe Business-Logik (`TaskService`) – nur die Präsentationsschicht unterscheidet sich. V2 liefert ein erweitertes JSON-Format mit Metadaten (`apiVersion`, `total`), das neuen Clients mehr Informationen gibt, ohne alte Clients zu brechen.
+Die Implementierung zeigt das Kernprinzip: Beide Versionen teilen sich dieselbe Business-Logik (`TaskService`) – nur die Präsentationsschicht unterscheidet sich. V2 liefert:
+- Ein erweitertes JSON-Format mit Metadaten (`apiVersion`, `filter`, `total`)
+- Serverseitigen Status-Filter (`?status=open|done`) statt client-seitiger Filterung
+
+Kein bestehender Client bricht, weil V1 unverändert bleibt.
 
 **Erkenntnisse:**
 - Versionierung erfordert bewusste Planung – sie nachträglich einzuführen bedeutet, alle bestehenden Clients zu informieren
 - Früh mit Versionierung anfangen (auch wenn noch keine zweite Version existiert) vereinfacht spätere Erweiterungen
 - Der Unterschied zwischen V1 und V2 muss klar und sinnvoll sein – reine Umbenennung bringt keinen Mehrwert
+- Serverseitiger Filter reduziert Netzwerklast und entlastet den Client

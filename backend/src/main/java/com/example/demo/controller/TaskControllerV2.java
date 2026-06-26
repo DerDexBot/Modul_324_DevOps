@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/v2/tasks")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000"})
@@ -20,8 +22,22 @@ public class TaskControllerV2 {
     }
 
     @GetMapping
-    public TaskListResponse getAllTasks() {
-        return new TaskListResponse(taskService.findAll());
+    public TaskListResponse getAllTasks(@RequestParam(required = false) String status) {
+        List<Task> tasks;
+        String appliedFilter;
+
+        if ("open".equalsIgnoreCase(status)) {
+            tasks = taskService.findByDone(false);
+            appliedFilter = "open";
+        } else if ("done".equalsIgnoreCase(status)) {
+            tasks = taskService.findByDone(true);
+            appliedFilter = "done";
+        } else {
+            tasks = taskService.findAll();
+            appliedFilter = "all";
+        }
+
+        return new TaskListResponse(tasks, appliedFilter);
     }
 
     @PostMapping

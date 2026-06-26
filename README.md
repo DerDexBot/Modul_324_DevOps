@@ -185,7 +185,7 @@ npm run dev
 
 ## Tests ausführen
 
-### Backend (36 Tests)
+### Backend (39 Tests)
 
 ```bash
 cd backend
@@ -197,7 +197,7 @@ cd backend
 | Repository | `TaskRepositoryTest` | 9 |
 | Service | `TaskServiceTest` | 10 |
 | Controller V1 | `TaskControllerTest` | 11 |
-| Controller V2 | `TaskControllerV2Test` | 5 |
+| Controller V2 | `TaskControllerV2Test` | 8 |
 | Kontext | `DemoApplicationTests` | 1 |
 
 ### Frontend (9 Tests)
