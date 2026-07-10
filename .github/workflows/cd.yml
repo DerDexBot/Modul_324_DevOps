@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Build JAR · Artifact
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
@@ -37,7 +37,7 @@ jobs:
 
   deploy-backend:
     name: Docker Push · Backend
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     permissions:
       contents: read
@@ -70,7 +70,7 @@ jobs:
 
   deploy-frontend:
     name: Docker Push · Frontend
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     permissions:
       contents: read
